@@ -110,7 +110,14 @@ const withTimeout = (promise, ms = 2500) => {
 export const dbService = {
   // Subscribe to real-time orders assigned to specific staff ID
   subscribeOrders(uid, onUpdate, onError) {
-    if (!uid) {
+    if (!uid || typeof uid !== "string") {
+      onUpdate([]);
+      return () => {};
+    }
+
+    const localUid = localStorage.getItem("deliveryUid");
+    if (uid !== localUid) {
+      console.warn("Security Alert: Unauthorized subscription request to orders.");
       onUpdate([]);
       return () => {};
     }
@@ -124,7 +131,7 @@ export const dbService = {
             return;
           }
           const order = { id: doc.id, ...doc.data() };
-          console.log("Assigned Order", order);
+          console.log("Assigned Order loaded:", order.id);
           orders.push(order);
         });
         onUpdate(orders);
@@ -141,7 +148,14 @@ export const dbService = {
 
   // Subscribe to real-time driver profile
   subscribeDriverProfile(uid, onUpdate, onError) {
-    if (!uid) {
+    if (!uid || typeof uid !== "string") {
+      onUpdate(null);
+      return () => {};
+    }
+
+    const localUid = localStorage.getItem("deliveryUid");
+    if (uid !== localUid) {
+      console.warn("Security Alert: Unauthorized subscription request to profile.");
       onUpdate(null);
       return () => {};
     }
@@ -150,7 +164,7 @@ export const dbService = {
       const profileRef = doc(firestoreDb, "deliveryStaff", uid);
       return onSnapshot(profileRef, (docSnap) => {
         if (docSnap.exists()) {
-          console.log("Profile already exists");
+          console.log("Profile subscription loaded");
           const data = docSnap.data();
           const defaultProfile = {
             name: data.name || "Delivery Rider",
@@ -186,11 +200,38 @@ export const dbService = {
   },
 
   async updateOrderStatus(orderId, status, details = {}) {
+    if (!orderId || typeof orderId !== "string") {
+      throw new Error("Invalid orderId parameter.");
+    }
+    if (!status || typeof status !== "string") {
+      throw new Error("Invalid status parameter.");
+    }
+    // Whitelist status changes for safety
+    const allowedStatuses = ["in-transit", "delivered", "Delivered", "assigned"];
+    if (!allowedStatuses.includes(status)) {
+      throw new Error(`Invalid status transition: ${status}`);
+    }
+
     const timestamp = new Date().toISOString();
     
     if (isFirebaseConfigured && firestoreDb) {
       try {
+        const uid = localStorage.getItem("deliveryUid");
+        if (!uid) {
+          throw new Error("Unauthorized: No active login session.");
+        }
+
         const orderRef = doc(firestoreDb, "orders", orderId);
+        const orderSnap = await withTimeout(getDoc(orderRef), 3000);
+        if (!orderSnap.exists()) {
+          throw new Error("Order not found.");
+        }
+
+        const orderData = orderSnap.data();
+        if (orderData.deliveryStaffId !== uid) {
+          throw new Error("Access Denied: You are not authorized to update this order.");
+        }
+
         const updateData = { status, ...details };
         if (status === "delivered" || status === "Delivered") {
           updateData.completedTimestamp = timestamp;
@@ -212,8 +253,19 @@ export const dbService = {
 
   // Update driver online status in Firestore
   async updateDriverStatus(uid, isOnline) {
-    if (isFirebaseConfigured && firestoreDb && uid) {
+    if (!uid || typeof uid !== "string") {
+      throw new Error("Invalid uid parameter.");
+    }
+    if (typeof isOnline !== "boolean") {
+      throw new Error("isOnline must be a boolean value.");
+    }
+
+    if (isFirebaseConfigured && firestoreDb) {
       try {
+        const localUid = localStorage.getItem("deliveryUid");
+        if (uid !== localUid) {
+          throw new Error("Access Denied: Unauthorized profile update.");
+        }
         const profileRef = doc(firestoreDb, "deliveryStaff", uid);
         await withTimeout(updateDoc(profileRef, { isOnline }), 3000);
       } catch (err) {
@@ -225,10 +277,26 @@ export const dbService = {
 
   // Update driver vehicle profile in Firestore
   async updateDriverVehicle(uid, vehicle, licensePlate) {
-    if (isFirebaseConfigured && firestoreDb && uid) {
+    if (!uid || typeof uid !== "string") {
+      throw new Error("Invalid uid parameter.");
+    }
+    const cleanVehicle = (vehicle || "").trim();
+    const cleanPlate = (licensePlate || "").trim();
+    if (!cleanVehicle || !cleanPlate) {
+      throw new Error("Vehicle and Bike Number are required.");
+    }
+    if (cleanVehicle.length > 50 || cleanPlate.length > 20) {
+      throw new Error("Input length exceeds maximum allowed limit.");
+    }
+
+    if (isFirebaseConfigured && firestoreDb) {
       try {
+        const localUid = localStorage.getItem("deliveryUid");
+        if (uid !== localUid) {
+          throw new Error("Access Denied: Unauthorized profile update.");
+        }
         const profileRef = doc(firestoreDb, "deliveryStaff", uid);
-        await withTimeout(updateDoc(profileRef, { vehicle, licensePlate }), 3000);
+        await withTimeout(updateDoc(profileRef, { vehicle: cleanVehicle, licensePlate: cleanPlate }), 3000);
       } catch (err) {
         console.error("Firebase updateDriverVehicle error:", err);
         throw err;
@@ -283,6 +351,13 @@ export const dbService = {
   async logoutUser() {
     localStorage.removeItem("deliveryUid");
     localStorage.removeItem("delivery_current_user");
+    if (isFirebaseConfigured && firebaseAuth) {
+      try {
+        await signOut(firebaseAuth);
+      } catch (e) {
+        console.error("Firebase signOut error:", e);
+      }
+    }
   },
 
   async getCurrentUserRole(uid) {
@@ -305,35 +380,87 @@ export const dbService = {
 
   // Listen to auth changes
   onAuthChanged(callback) {
-    const uid = localStorage.getItem("deliveryUid");
-    if (uid) {
-      if (isFirebaseConfigured && firestoreDb) {
-        const docRef = doc(firestoreDb, "deliveryStaff", uid);
-        withTimeout(getDoc(docRef), 3000).then((snap) => {
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.status === 'active' && data.role === 'delivery') {
-              callback({ uid, email: data.email, role: 'delivery', ...data });
-            } else {
-              localStorage.removeItem("deliveryUid");
-              callback(null);
-            }
+    if (!isFirebaseConfigured || !firebaseAuth || !firestoreDb) {
+      localStorage.removeItem("deliveryUid");
+      callback(null);
+      return () => {};
+    }
+
+    // Subscribe to Firebase Auth state changes
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        localStorage.removeItem("deliveryUid");
+        callback(null);
+        return;
+      }
+
+      const uid = localStorage.getItem("deliveryUid");
+      if (!uid) {
+        // If logged in via Auth but no deliveryUid in localStorage, query Firestore by email
+        try {
+          const q = query(
+            collection(firestoreDb, "deliveryStaff"),
+            where("email", "==", firebaseUser.email.trim())
+          );
+          const querySnapshot = await withTimeout(getDocs(q), 3000);
+          if (querySnapshot.empty) {
+            await signOut(firebaseAuth);
+            localStorage.removeItem("deliveryUid");
+            callback(null);
+            return;
+          }
+          const docSnap = querySnapshot.docs[0];
+          const data = docSnap.data();
+          if (data.role === 'delivery' && data.status === 'active') {
+            localStorage.setItem("deliveryUid", docSnap.id);
+            callback({ uid: docSnap.id, email: data.email, role: 'delivery', ...data });
           } else {
+            await signOut(firebaseAuth);
             localStorage.removeItem("deliveryUid");
             callback(null);
           }
-        }).catch((err) => {
-          console.error("Auth check failed:", err);
+        } catch (err) {
+          console.error("Auth sync error:", err);
+          await signOut(firebaseAuth);
           localStorage.removeItem("deliveryUid");
           callback(null);
-        });
-      } else {
+        }
+        return;
+      }
+
+      // We have a uid in localStorage. Verify it against the authenticated firebaseUser
+      try {
+        const docRef = doc(firestoreDb, "deliveryStaff", uid);
+        const snap = await withTimeout(getDoc(docRef), 3000);
+        if (snap.exists()) {
+          const data = snap.data();
+          // Security Check: Verify that the Firestore document's email matches the authenticated Firebase User's email
+          if (
+            data.email &&
+            data.email.trim().toLowerCase() === firebaseUser.email.trim().toLowerCase() &&
+            data.role === 'delivery' &&
+            data.status === 'active'
+          ) {
+            callback({ uid, email: data.email, role: 'delivery', ...data });
+          } else {
+            console.warn("Security Alert: User email mismatch or inactive account. Logging out.");
+            await signOut(firebaseAuth);
+            localStorage.removeItem("deliveryUid");
+            callback(null);
+          }
+        } else {
+          await signOut(firebaseAuth);
+          localStorage.removeItem("deliveryUid");
+          callback(null);
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        await signOut(firebaseAuth);
         localStorage.removeItem("deliveryUid");
         callback(null);
       }
-    } else {
-      callback(null);
-    }
-    return () => {};
+    });
+
+    return unsubscribeAuth;
   }
 };

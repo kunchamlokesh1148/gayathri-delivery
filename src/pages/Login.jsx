@@ -20,8 +20,16 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password.trim()) {
       setError("Please fill in all fields.");
+      triggerShake();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError("Please enter a valid email address.");
       triggerShake();
       return;
     }
@@ -30,7 +38,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(cleanEmail, password);
       // Success triggers AuthState change listener, redirecting automatically
       navigate("/");
     } catch (err) {

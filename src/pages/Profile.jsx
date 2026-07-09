@@ -33,8 +33,24 @@ export default function Profile() {
   }, [profile]);
 
   const handleSave = async () => {
+    const cleanVehicle = (vehicleName || "").trim();
+    const cleanPlate = (licensePlate || "").trim();
+
+    if (!cleanVehicle || !cleanPlate) {
+      alert("Vehicle name and Bike number cannot be empty.");
+      return;
+    }
+    if (cleanVehicle.length > 50) {
+      alert("Vehicle name must be under 50 characters.");
+      return;
+    }
+    if (cleanPlate.length > 20) {
+      alert("Bike number must be under 20 characters.");
+      return;
+    }
+
     setIsSaving(true);
-    const success = await updateDriverVehicle(vehicleName, licensePlate);
+    const success = await updateDriverVehicle(cleanVehicle, cleanPlate);
     if (success) {
       setIsEditing(false);
     }

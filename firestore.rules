@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Is the user authenticated?
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Does the requesting user's email match the document's email?
+    function isOwnerByEmail(email) {
+      return isAuthenticated() && request.auth.token.email.lower() == email.lower();
+    }
+
+    // deliveryStaff Collection Rules
+    match /deliveryStaff/{driverId} {
+      // Allow read if user is authenticated and their email matches the driver document's email
+      allow read: if isAuthenticated() && isOwnerByEmail(resource.data.email);
+      
+      // Allow update (online status, vehicle name, license plate) only if they own the profile
+      allow update: if isAuthenticated() 
+        && isOwnerByEmail(resource.data.email)
+        && request.resource.data.role == resource.data.role // prevent changing role
+        && request.resource.data.email == resource.data.email; // prevent changing email
+        
+      // Prevent creation and deletion by couriers
+      allow create, delete: if false;
+    }
+
+    // orders Collection Rules
+    match /orders/{orderId} {
+      // Allow read if the order is assigned to the courier (matching email of the deliveryStaff profile)
+      allow read: if isAuthenticated()
+        && resource.data.deliveryStaffId != null
+        && get(/databases/$(database)/documents/deliveryStaff/$(resource.data.deliveryStaffId)).data.email.lower() == request.auth.token.email.lower();
+
+      // Allow updating status/verification details only if assigned to this courier
+      allow update: if isAuthenticated()
+        && resource.data.deliveryStaffId != null
+        && get(/databases/$(database)/documents/deliveryStaff/$(resource.data.deliveryStaffId)).data.email.lower() == request.auth.token.email.lower()
+        // Prevent changing other critical order details (customerName, items, pricing, etc.)
+        && request.resource.data.items == resource.data.items
+        && request.resource.data.deliveryStaffId == resource.data.deliveryStaffId;
+        
+      // Prevent create/delete by courier
+      allow create, delete: if false;
+    }
+  }
+}

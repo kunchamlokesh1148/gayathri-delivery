@@ -94,8 +94,14 @@ export default function VerifyDelivery() {
       return;
     }
 
+    const cleanCode = (enteredCode || "").trim();
+    if (!cleanCode || cleanCode.length !== 6 || !/^\d{6}$/.test(cleanCode)) {
+      setErrorMsg("Verification code must be a 6-digit number.");
+      return;
+    }
+
     try {
-      await verifyOrderDelivery(selectedOrderId, enteredCode);
+      await verifyOrderDelivery(selectedOrderId, cleanCode);
       
       // Success
       setIsSuccess(true);
