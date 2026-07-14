@@ -1,4 +1,3 @@
-import React from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useOrders, getStatusVal } from "../context/OrderContext";
 import RouteWrapper from "../components/RouteWrapper";
@@ -6,15 +5,12 @@ import {
   ArrowLeft, 
   Phone, 
   MapPin, 
-  Clock, 
   Navigation, 
   ShieldCheck, 
   User, 
   FileText,
   AlertCircle,
   CreditCard,
-  Store,
-  Calendar,
   CheckCircle2
 } from "lucide-react";
 

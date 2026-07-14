@@ -1,6 +1,4 @@
-import React from "react";
 import { useOrders } from "../context/OrderContext";
-import { Shield, ShieldAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Header() {

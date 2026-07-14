@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useOrders, getStatusVal } from "../context/OrderContext";
 import RouteWrapper from "../components/RouteWrapper";
-import { ShieldCheck, ShieldAlert, ArrowLeft, Delete, CheckCircle2, Lock, Unlock } from "lucide-react";
+import { ShieldAlert, ArrowLeft, Delete, Lock, Unlock } from "lucide-react";
 import confetti from "canvas-confetti";
 
 export default function VerifyDelivery() {
@@ -20,13 +20,15 @@ export default function VerifyDelivery() {
   useEffect(() => {
     // Default to the global active order if it is in-transit
     if (activeOrder && getStatusVal(activeOrder.status) === "in-transit") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedOrderId(activeOrder.id);
-    } else if (transitOrders.length > 0) {
-      setSelectedOrderId(transitOrders[0].id);
+    } else {
+      const activeTransit = orders.filter(o => getStatusVal(o.status) === "in-transit");
+      if (activeTransit.length > 0) {
+        setSelectedOrderId(activeTransit[0].id);
+      }
     }
   }, [activeOrder, orders]);
-
-  const selectedOrder = orders.find(o => o.id === selectedOrderId);
 
   // Synthetic sound triggers
   const playSound = (freq, duration, type = "sine", gainVal = 0.01) => {
@@ -42,7 +44,7 @@ export default function VerifyDelivery() {
       gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
       osc.start();
       osc.stop(audioCtx.currentTime + duration);
-    } catch (e) {
+    } catch {
       // Audio might be blocked initially
     }
   };

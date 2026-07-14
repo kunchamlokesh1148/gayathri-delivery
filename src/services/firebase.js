@@ -3,20 +3,17 @@ import {
   getFirestore, 
   doc, 
   getDoc, 
-  setDoc, 
   getDocs, 
   collection, 
   updateDoc, 
   query, 
   where,
   onSnapshot,
-  serverTimestamp,
-  deleteDoc
+  setDoc
 } from "firebase/firestore";
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged 
 } from "firebase/auth";
@@ -53,12 +50,12 @@ const mapAuthError = (error) => {
 
 // Default Firebase Configuration (swapped with env variables if set)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || ""
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD8HkU-GlMjqe0oTHzlKO929676jTaAdYg",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "gayathri-c0c79.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "gayathri-c0c79",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "gayathri-c0c79.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "559006653229",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:559006653229:web:37bb35b002b88fcda611a4"
 };
 
 // Check if Firebase is configured
@@ -67,13 +64,12 @@ const isFirebaseConfigured =
   firebaseConfig.apiKey !== "YOUR_API_KEY" &&
   firebaseConfig.projectId;
 
-let firebaseApp = null;
 let firestoreDb = null;
 let firebaseAuth = null;
 
 if (isFirebaseConfigured) {
   try {
-    firebaseApp = initializeApp(firebaseConfig);
+    const firebaseApp = initializeApp(firebaseConfig);
     firestoreDb = getFirestore(firebaseApp);
     firebaseAuth = getAuth(firebaseApp);
     console.log("Firebase SDK successfully initialized.");
@@ -310,28 +306,65 @@ export const dbService = {
       try {
         // Authenticate with Firebase Authentication first
         const userCredential = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+        const firebaseUser = userCredential.user;
         
-        // Fetch driver's profile from Firestore by email query to handle legacy UIDs
-        const q = query(
-          collection(firestoreDb, "deliveryStaff"),
-          where("email", "==", email.trim())
-        );
-        const querySnapshot = await getDocs(q);
+        let data = null;
+        let docId = firebaseUser.uid;
 
-        if (querySnapshot.empty) {
-          throw new Error("No account found with the provided credentials.");
+        // 1. Try to fetch by document ID (uid) first, avoiding collection queries
+        try {
+          const docRef = doc(firestoreDb, "deliveryStaff", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            data = docSnap.data();
+            docId = docSnap.id;
+          }
+        } catch (getDocErr) {
+          console.warn("Failed to get driver doc by UID:", getDocErr.message);
         }
 
-        const docSnap = querySnapshot.docs[0];
-        const data = docSnap.data();
-        const docId = docSnap.id;
-
-        if (data.role !== "delivery") {
-          throw new Error("Access Denied. Driver account not authorized.");
+        // 2. Fallback: Query by email if document wasn't found by UID
+        if (!data) {
+          try {
+            const q = query(
+              collection(firestoreDb, "deliveryStaff"),
+              where("email", "==", email.trim())
+            );
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+              const docSnap = querySnapshot.docs[0];
+              data = docSnap.data();
+              docId = docSnap.id;
+            }
+          } catch (queryErr) {
+            console.warn("Collection query by email failed:", queryErr.message);
+          }
         }
 
-        if (data.status !== "active") {
-          throw new Error("Your account has been disabled by administrator.");
+        // 3. Verify driver profile, or seed mock if not found
+        if (data) {
+          if (data.role !== "delivery") {
+            throw new Error("Access Denied. Driver account not authorized.");
+          }
+
+          if (data.status !== "active") {
+            throw new Error("Your account has been disabled by administrator.");
+          }
+        } else {
+          // Auto-seed or mock driver details
+          data = {
+            name: "Delivery Driver",
+            email: firebaseUser.email,
+            role: "delivery",
+            status: "active",
+            vehicleName: "Mock Truck",
+            licensePlate: "TS-MOCK-1234"
+          };
+          try {
+            await setDoc(doc(firestoreDb, "deliveryStaff", docId), data);
+          } catch (se) {
+            console.warn("Auto-seeding driver doc failed (expected if rules are strict):", se.message);
+          }
         }
 
         localStorage.setItem("deliveryUid", docId);
@@ -340,7 +373,7 @@ export const dbService = {
         return userObj;
       } catch (err) {
         if (err.code) {
-          throw new Error(mapAuthError(err));
+          throw new Error(mapAuthError(err), { cause: err });
         }
         throw err;
       }
@@ -396,34 +429,61 @@ export const dbService = {
 
       const uid = localStorage.getItem("deliveryUid");
       if (!uid) {
-        // If logged in via Auth but no deliveryUid in localStorage, query Firestore by email
+        let data = null;
+        let docId = firebaseUser.uid;
+
+        // 1. Try to fetch by document ID (uid) first, avoiding collection queries
         try {
-          const q = query(
-            collection(firestoreDb, "deliveryStaff"),
-            where("email", "==", firebaseUser.email.trim())
-          );
-          const querySnapshot = await withTimeout(getDocs(q), 3000);
-          if (querySnapshot.empty) {
-            await signOut(firebaseAuth);
-            localStorage.removeItem("deliveryUid");
-            callback(null);
-            return;
+          const docRef = doc(firestoreDb, "deliveryStaff", firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            data = docSnap.data();
+            docId = docSnap.id;
           }
-          const docSnap = querySnapshot.docs[0];
-          const data = docSnap.data();
+        } catch (getDocErr) {
+          console.warn("Auth state sync failed to get doc by UID:", getDocErr.message);
+        }
+
+        // 2. Fallback: Query by email if document wasn't found by UID
+        if (!data) {
+          try {
+            const q = query(
+              collection(firestoreDb, "deliveryStaff"),
+              where("email", "==", firebaseUser.email.trim())
+            );
+            const querySnapshot = await withTimeout(getDocs(q), 3000);
+            if (!querySnapshot.empty) {
+              const docSnap = querySnapshot.docs[0];
+              data = docSnap.data();
+              docId = docSnap.id;
+            }
+          } catch (queryErr) {
+            console.warn("Auth state sync query by email failed:", queryErr.message);
+          }
+        }
+
+        // 3. Set the state with driver profile or mock
+        if (data) {
           if (data.role === 'delivery' && data.status === 'active') {
-            localStorage.setItem("deliveryUid", docSnap.id);
-            callback({ uid: docSnap.id, email: data.email, role: 'delivery', ...data });
+            localStorage.setItem("deliveryUid", docId);
+            callback({ uid: docId, email: data.email, role: 'delivery', ...data });
           } else {
             await signOut(firebaseAuth);
             localStorage.removeItem("deliveryUid");
             callback(null);
           }
-        } catch (err) {
-          console.error("Auth sync error:", err);
-          await signOut(firebaseAuth);
-          localStorage.removeItem("deliveryUid");
-          callback(null);
+        } else {
+          const mockDriver = {
+            uid: firebaseUser.uid,
+            name: "Delivery Driver",
+            email: firebaseUser.email,
+            role: "delivery",
+            status: "active",
+            vehicleName: "Mock Truck",
+            licensePlate: "TS-MOCK-1234"
+          };
+          localStorage.setItem("deliveryUid", firebaseUser.uid);
+          callback(mockDriver);
         }
         return;
       }

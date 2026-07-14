@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { dbService } from "../services/firebase";
 import { useAuth } from "./AuthContext";
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const getStatusVal = (status) => {
   if (!status) return "assigned";
   const s = status.toLowerCase().replace(/[\s-_]/g, "");
@@ -12,6 +13,7 @@ export const getStatusVal = (status) => {
 
 const OrderContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useOrders = () => {
   const context = useContext(OrderContext);
   if (!context) {
@@ -31,6 +33,7 @@ export const OrderProvider = ({ children }) => {
   // Subscribe to real-time updates whenever the logged-in user changes
   useEffect(() => {
     if (!currentUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOrders([]);
       setProfile(null);
       setActiveOrderId(null);
@@ -125,7 +128,7 @@ export const OrderProvider = ({ children }) => {
         return true;
       } catch (err) {
         console.error("Failed to verify delivery:", err);
-        throw new Error("Database update failed. Try again.");
+        throw new Error("Database update failed. Try again.", { cause: err });
       }
     } else {
       throw new Error("Invalid Verification Code");

@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { Navigation, ShieldCheck, MapPin, Package, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useOrders, getStatusVal } from "../context/OrderContext";

@@ -1,19 +1,13 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useOrders } from "../context/OrderContext";
 import { useAuth } from "../context/AuthContext";
 import RouteWrapper from "../components/RouteWrapper";
 import { 
-  User, 
   Mail, 
   Phone, 
   Bike, 
   Award, 
-  Star, 
-  Map, 
-  DollarSign, 
-  Compass, 
-  LogOut,
-  Sliders
+  LogOut
 } from "lucide-react";
 
 export default function Profile() {
@@ -27,6 +21,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVehicleName(profile.vehicle || "");
       setLicensePlate(profile.licensePlate || "");
     }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useOrders, getStatusVal } from "../context/OrderContext";
 import RouteWrapper from "../components/RouteWrapper";
@@ -6,18 +6,16 @@ import {
   IndianRupee, 
   TrendingUp, 
   MapPin, 
-  Navigation, 
   ShieldCheck, 
   Clock, 
   Activity, 
-  Star,
   ChevronRight,
   Sparkles,
   Calendar
 } from "lucide-react";
 
 export default function Dashboard() {
-  const { orders, profile, activeOrder, startOrderDelivery } = useOrders();
+  const { orders, profile, activeOrder } = useOrders();
   const todayLocalDate = new Date().toLocaleDateString();
   const [selectedDateStr, setSelectedDateStr] = useState(todayLocalDate);
 

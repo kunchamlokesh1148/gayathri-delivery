@@ -1,6 +1,5 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, ClipboardList, ShieldCheck, User } from "lucide-react";
+import { LayoutDashboard, ClipboardList, User } from "lucide-react";
 
 export default function BottomNav() {
   // Simple sound trigger for satisfying tactile feel
@@ -17,7 +16,7 @@ export default function BottomNav() {
       gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
       osc.start();
       osc.stop(audioCtx.currentTime + 0.1);
-    } catch (e) {
+    } catch {
       // Audio context might be blocked by user gesture policy initially
     }
   };

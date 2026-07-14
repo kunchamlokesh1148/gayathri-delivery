@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useOrders, getStatusVal } from "../context/OrderContext";
 import RouteWrapper from "../components/RouteWrapper";
 import OrderCard from "../components/OrderCard";
-import { Search, Inbox, SlidersHorizontal, PackageOpen } from "lucide-react";
+import { Search, PackageOpen } from "lucide-react";
 
 export default function AssignedOrders() {
   const { orders, loading } = useOrders();
