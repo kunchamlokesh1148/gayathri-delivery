@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd user && npm run build",
+  "buildCommand": "cd user && npm install && npm run build",
   "outputDirectory": "user/dist",
   "rewrites": [
     {
