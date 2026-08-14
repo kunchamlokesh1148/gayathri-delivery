@@ -1,0 +1,11 @@
+{
+  "name": "gtcm-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd user && npm run build",
+    "build:user": "cd user && npm run build",
+    "build:admin": "cd admin && npm run build",
+    "build:delivery": "cd delivery && npm run build"
+  }
+}
