@@ -1,4 +1,4 @@
-﻿import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useOrders, getStatusVal } from "../context/OrderContext";
 import RouteWrapper from "../components/RouteWrapper";
 import GoogleMapView from "../components/GoogleMapView";
@@ -313,4 +313,3 @@ export default function OrderDetails() {
     </RouteWrapper>
   );
 }
-

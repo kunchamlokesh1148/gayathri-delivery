@@ -1,4 +1,4 @@
-﻿import { useOrders } from "../context/OrderContext";
+import { useOrders } from "../context/OrderContext";
 import { Link } from "react-router-dom";
 
 export default function Header() {
@@ -46,4 +46,3 @@ export default function Header() {
     </header>
   );
 }
-
