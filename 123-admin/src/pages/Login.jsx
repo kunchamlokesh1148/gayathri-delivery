@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ShieldCheck, Zap } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
@@ -28,24 +28,10 @@ export default function Login() {
     } catch (err) {
       console.error("Login failure details:", err);
       const code = err.code || err.message || "";
-      const errorText = typeof code === 'string' ? code.toLowerCase() : "";
-
-      if (
-        errorText.includes("invalid-credential") ||
-        errorText.includes("wrong-password") ||
-        errorText.includes("invalid-email")
-      ) {
-        setError("Invalid credentials. Please check your email and password and try again.");
-      } else if (errorText.includes("user-not-found")) {
-        setError("No account found with the provided credentials.");
-      } else if (errorText.includes("network-request-failed") || errorText.includes("network")) {
-        setError("Network error. Please check your internet connection and try again.");
-      } else if (errorText.includes("too-many-requests")) {
-        setError("Too many failed login attempts. Please try again later.");
-      } else if (errorText.includes("access denied")) {
-        setError("Access denied. Your account may be inactive.");
+      if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) {
+        setError('Invalid email or password. Please check your credentials.');
       } else {
-        setError("Something went wrong. Please try again.");
+        setError('Login failed: ' + (err.message || 'Check network connection'));
       }
     } finally {
       setLoading(false);
@@ -59,18 +45,16 @@ export default function Login() {
       
       <div className="w-full max-w-md glass-panel p-8 rounded-3xl border border-indigo-400/10 shadow-2xl relative z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full overflow-hidden border border-indigo-400/35 mx-auto mb-4 bg-indigo-950/20 flex items-center justify-center">
-            <img 
-              src="/gayatri_mata_avatar.png" 
-              alt="FLASH-G Logo" 
-              className="w-full h-full object-cover"
-            />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-400 p-0.5 shadow-xl shadow-amber-500/20 mx-auto mb-4 flex items-center justify-center">
+            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+              <Zap className="w-8 h-8 text-amber-400 fill-amber-400" />
+            </div>
           </div>
           <h2 className="text-2xl font-black text-[#B8860B] uppercase tracking-wider">
             FLASH-G Cutmit
           </h2>
           <p className="text-xs text-[#4B5563] mt-1 uppercase font-bold tracking-widest">
-            Admin Portal
+            Admin Management Portal
           </p>
         </div>
 

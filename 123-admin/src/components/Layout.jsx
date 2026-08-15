@@ -83,12 +83,10 @@ export default function Layout({ children }) {
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-slate-800 bg-slate-950/40">
           <Link to="/" className="flex items-center gap-3 overflow-hidden" onClick={() => setMobileOpen(false)}>
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-indigo-400/35 shrink-0 flex items-center justify-center bg-indigo-950/20">
-              <img 
-                src="/gayatri_mata_avatar.png" 
-                alt="Gayatri Mata Logo" 
-                className="w-full h-full object-cover"
-              />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-400 p-0.5 shadow-md shadow-amber-500/20 shrink-0 flex items-center justify-center">
+              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                <Zap className="w-5 h-5 text-amber-400 fill-amber-400" />
+              </div>
             </div>
             {!collapsed && (
               <span className="font-extrabold text-xs bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 leading-snug tracking-wide uppercase">

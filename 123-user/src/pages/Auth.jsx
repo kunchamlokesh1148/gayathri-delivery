@@ -457,7 +457,7 @@ export default function Auth() {
             <div className="inline-flex p-2 bg-brand-dark rounded-full mb-2 border-2 border-yellow-400 shadow-md">
               <Store className="h-6 w-6 text-yellow-400" />
             </div>
-            <h2 className="text-lg font-bold tracking-tight animate-fade-in-up">Partner Portal</h2>
+            <h2 className="text-lg font-bold tracking-tight animate-fade-in-up">FLASH-G Partner Portal</h2>
             <p className="text-xs text-brand-light mt-0.5 font-medium animate-fade-in-up">Browse, order, and track for your store</p>
           </div>
 
