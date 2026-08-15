@@ -111,8 +111,8 @@ export default function HelpModal({ isOpen, onClose }) {
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-wider font-extrabold text-gray-400">Email Support</p>
-                  <a href="mailto:gayatricutmit@gmail.com" className="text-sm font-bold text-gray-800 hover:text-accent transition break-all">
-                    gayatricutmit@gmail.com
+                  <a href="mailto:contact@flash-g.com" className="text-sm font-bold text-gray-800 hover:text-accent transition break-all">
+                    contact@flash-g.com
                   </a>
                 </div>
               </div>
@@ -128,7 +128,7 @@ export default function HelpModal({ isOpen, onClose }) {
                 Call Now
               </a>
               <a
-                href="mailto:gayatricutmit@gmail.com"
+                href="mailto:contact@flash-g.com"
                 className="flex items-center justify-center gap-1.5 py-2.5 bg-accent hover:bg-accent-dark text-white rounded-full text-[11px] font-black shadow-sm hover:shadow-md transition-all text-center cursor-pointer active-bounce"
               >
                 <Mail className="h-3.5 w-3.5" />
