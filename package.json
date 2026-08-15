@@ -3,14 +3,14 @@
   "private": true,
   "version": "1.0.0",
   "workspaces": [
-    "admin",
-    "delivery",
-    "user"
+    "123-admin",
+    "123-delivery",
+    "123-user"
   ],
   "scripts": {
-    "build": "cd user && npm install && npm run build",
-    "build:user": "cd user && npm install && npm run build",
-    "build:admin": "cd admin && npm install && npm run build",
-    "build:delivery": "cd delivery && npm install && npm run build"
+    "build": "cd 123-user && npm run build",
+    "build:user": "cd 123-user && npm run build",
+    "build:admin": "cd 123-admin && npm run build",
+    "build:delivery": "cd 123-delivery && npm run build"
   }
 }
