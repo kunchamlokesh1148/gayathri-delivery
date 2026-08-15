@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+﻿import { useParams, Link, useNavigate } from "react-router-dom";
 import { useOrders, getStatusVal } from "../context/OrderContext";
 import RouteWrapper from "../components/RouteWrapper";
 import GoogleMapView from "../components/GoogleMapView";
@@ -136,7 +136,7 @@ export default function OrderDetails() {
             longitude={order.deliveryAddress && typeof order.deliveryAddress === 'object' ? order.deliveryAddress.longitude : null}
             originLat={18.1018}
             originLng={78.8523}
-            originTitle="FLASH-G Cutmit Store"
+            originTitle="FLASH-G Store"
             address={address}
             title={`Delivery: ${shopName || customerName}`}
             height="240px"
@@ -313,3 +313,4 @@ export default function OrderDetails() {
     </RouteWrapper>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useOrders } from "../context/OrderContext";
+﻿import { useOrders } from "../context/OrderContext";
 import { Link } from "react-router-dom";
 
 export default function Header() {
@@ -22,7 +22,7 @@ export default function Header() {
             </svg>
           </div>
           <div>
-            <h1 className="text-sm font-extrabold tracking-tight text-white font-outfit uppercase">FLASH-G Cutmit</h1>
+            <h1 className="text-sm font-extrabold tracking-tight text-white font-outfit uppercase">FLASH-G</h1>
             <p className="text-[10px] text-zinc-400 font-mono tracking-wider">DELIVERY PARTNER</p>
           </div>
         </Link>
@@ -46,3 +46,4 @@ export default function Header() {
     </header>
   );
 }
+

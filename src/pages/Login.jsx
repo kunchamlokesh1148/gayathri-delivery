@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, ShieldAlert } from "lucide-react";
@@ -98,7 +98,7 @@ export default function Login() {
             </svg>
             <div className="absolute inset-0 rounded-2xl bg-brand-500/5 blur-md"></div>
           </div>
-          <h2 className="text-xl font-black font-outfit text-white uppercase tracking-wider">FLASH-G Cutmit</h2>
+          <h2 className="text-xl font-black font-outfit text-white uppercase tracking-wider">FLASH-G</h2>
           <p className="text-[11px] text-zinc-400 mt-1">Delivery Staff Security Portal</p>
         </div>
 
@@ -175,3 +175,4 @@ export default function Login() {
     </div>
   );
 }
+
